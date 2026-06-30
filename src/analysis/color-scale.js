@@ -12,7 +12,7 @@ export function valueToColor(value, maxValue) {
     return { r: 26, g: 35, b: 50, a: 180 }
   }
 
-  const t = Math.log(1 + value) / Math.log(1 + maxValue)
+  const t = Math.sqrt(value / maxValue)
 
   let i = 0
   for (let j = 0; j < COLOR_STOPS.length - 1; j++) {
@@ -33,4 +33,11 @@ export function valueToColor(value, maxValue) {
     b: Math.round(a.b + (b.b - a.b) * localT),
     a: 200
   }
+}
+
+export function getLegendColors() {
+  return COLOR_STOPS.map(s => ({
+    r: s.r, g: s.g, b: s.b,
+    label: `${Math.round(s.t * 100)}%`
+  }))
 }

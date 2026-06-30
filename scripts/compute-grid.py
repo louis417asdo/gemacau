@@ -9,11 +9,11 @@ with open('data/macau-buildings.geojson') as f:
 MIN_LON, MIN_LAT = 113.5282, 22.0767
 MAX_LON, MAX_LAT = 113.6301, 22.2170
 
-# 200m grid in degrees (approximate: 1° lat ≈ 111km, 1° lon ≈ 111*cos(22.15°) ≈ 102.8km)
+# 100m grid in degrees (approximate: 1° lat ≈ 111km, 1° lon ≈ 111*cos(22.15°) ≈ 102.8km)
 DEG_PER_M = 1 / 111000  # ~0.000009° per meter
 LON_DEG_PER_M = 1 / (111000 * math.cos(math.radians(22.15)))  # ~0.0000097° per meter
-GRID_SIZE_DEG_LAT = 200 * DEG_PER_M
-GRID_SIZE_DEG_LON = 200 * LON_DEG_PER_M
+GRID_SIZE_DEG_LAT = 100 * DEG_PER_M
+GRID_SIZE_DEG_LON = 100 * LON_DEG_PER_M
 
 # Create grid
 grid_cells = []
@@ -120,7 +120,7 @@ for b in buildings['features']:
             break
 
 # Calculate density and FAR
-cell_area_m2 = 200 * 200  # 40,000 m²
+cell_area_m2 = 100 * 100  # 10,000 m²
 for cell in grid_cells:
     p = cell['properties']
     p['density'] = round(p['footprint_area'] / cell_area_m2, 4)

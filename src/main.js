@@ -6,6 +6,8 @@ import { loadFARGrid, showFARGrid } from './analysis/far-grid.js'
 import { loadPopulationDensity, showPopulationDensity } from './analysis/population-density.js'
 import { setupSunlight } from './analysis/sunlight.js'
 import { setupScenario } from './analysis/scenario.js'
+import { setupSimulator, getComparisonReport } from './analysis/simulator.js'
+import { getLegendColors } from './analysis/color-scale.js'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN
 
@@ -20,6 +22,7 @@ if (!token) {
 Cesium.Ion.defaultAccessToken = token || ''
 
 let currentAnalysis = null
+let hoveredEntity = null
 
 async function initViewer() {
   const terrainProvider = token
@@ -77,8 +80,10 @@ async function initViewer() {
 
   setupToolbar(viewer)
   setupClickHandler(viewer)
+  setupHoverHandler(viewer)
   setupSunlight(viewer)
   setupScenario(viewer)
+  setupSimulator(viewer)
   setupScreenshot(viewer)
 }
 
@@ -86,6 +91,7 @@ function setAnalysis(viewer, mode) {
   showBuildingDensity(false)
   showFARGrid(false)
   showPopulationDensity(false)
+  hideLegend()
 
   if (mode === currentAnalysis) {
     currentAnalysis = null
@@ -105,26 +111,54 @@ function setAnalysis(viewer, mode) {
       基於 OSM 建築 footprint 計算<br>
       顏色越暖 = 密度越高<br>
       數據來源：OpenStreetMap (ODbL)<br>
-      精度：200m 網格
+      精度：100m 網格<br>
+      <em>點擊網格查看詳細數據</em>
     `
+    showLegend('建築密度', '低', '高')
   } else if (mode === 'far') {
     showFARGrid(true)
     infoContent.innerHTML = `
       <strong>容積率估算（網格法）</strong><br>
-      200m × 200m 網格<br>
+      100m × 100m 網格<br>
       顏色越暖 = 容積率越高<br>
       ⚠️ 樓層為假設值（非官方數據）<br>
-      數據來源：OSM + DSEC 估算
+      數據來源：OSM + DSEC 估算<br>
+      <em>點擊網格查看詳細數據</em>
     `
+    showLegend('容積率 (FAR)', '0', '高')
   } else if (mode === 'population') {
     showPopulationDensity(true)
     infoContent.innerHTML = `
       <strong>人口密度（堂區級）</strong><br>
-      顏色越暖 = 人口越多<br>
+      顏色越暖 = 密度越高（人/km²）<br>
       數據來源：DSEC 2021 普查<br>
-      精度：堂區級（7 區）
+      精度：堂區級（7 區）<br>
+      <em>點擊堂區查看詳細數據</em>
     `
+    showLegend('人口密度', '低', '高')
   }
+}
+
+function showLegend(title, minLabel, maxLabel) {
+  const legend = document.getElementById('legend')
+  const bar = document.getElementById('legend-bar')
+  const titleEl = document.getElementById('legend-title')
+  const minEl = document.getElementById('legend-min')
+  const maxEl = document.getElementById('legend-max')
+
+  titleEl.textContent = title
+  minEl.textContent = minLabel
+  maxEl.textContent = maxLabel
+
+  bar.innerHTML = getLegendColors().map(c =>
+    `<div style="background:rgb(${c.r},${c.g},${c.b})"></div>`
+  ).join('')
+
+  legend.classList.remove('hidden')
+}
+
+function hideLegend() {
+  document.getElementById('legend').classList.add('hidden')
 }
 
 function setupToolbar(viewer) {
@@ -132,11 +166,13 @@ function setupToolbar(viewer) {
   const infoPanel = document.getElementById('info-panel')
   const sunlightPanel = document.getElementById('sunlight-panel')
   const scenarioPanel = document.getElementById('scenario-panel')
+  const simulatorPanel = document.getElementById('simulator-panel')
 
   function hideAllPanels() {
     infoPanel.classList.add('hidden')
     sunlightPanel.classList.add('hidden')
     scenarioPanel.classList.add('hidden')
+    simulatorPanel.classList.add('hidden')
     document.getElementById('analysis-submenu')?.classList.add('hidden')
   }
 
@@ -156,6 +192,7 @@ function setupToolbar(viewer) {
         sunlightPanel.classList.remove('hidden')
       } else if (panel === 'scenario') {
         scenarioPanel.classList.remove('hidden')
+        simulatorPanel.classList.remove('hidden')
       }
     })
   })
@@ -175,8 +212,34 @@ function setupClickHandler(viewer) {
     const infoContent = document.getElementById('info-content')
     const infoPanel = document.getElementById('info-panel')
 
-    if (Cesium.defined(picked) && picked.id && picked.id.properties) {
-      const props = picked.id.properties
+    if (!Cesium.defined(picked) || !picked.id) return
+
+    const entity = picked.id
+
+    if (entity.properties && entity.properties.hasProperty('far')) {
+      const far = entity.properties.far.getValue()
+      const density = entity.properties.density.getValue()
+      const count = entity.properties.building_count.getValue()
+      infoContent.innerHTML = `
+        <strong>網格數據</strong><br>
+        容積率：${far.toFixed(2)}<br>
+        密度：${(density * 100).toFixed(1)}%<br>
+        建築數：${count}
+      `
+      infoPanel.classList.remove('hidden')
+    } else if (entity._gemacauDensity !== undefined) {
+      const density = entity._gemacauDensity
+      const pop = entity._gemacauPop
+      const area = entity._gemacauArea
+      infoContent.innerHTML = `
+        <strong>${entity.properties.name.getValue()}</strong><br>
+        人口：${pop.toLocaleString()}<br>
+        面積：${area.toFixed(2)} km²<br>
+        密度：${Math.round(density).toLocaleString()} 人/km²
+      `
+      infoPanel.classList.remove('hidden')
+    } else if (entity.properties && entity.properties.hasProperty('name')) {
+      const props = entity.properties
       const name = props.name?.getValue() || '未命名建築'
       const height = props.height?.getValue() || '—'
       const floors = props.floors?.getValue() || '—'
@@ -188,6 +251,23 @@ function setupClickHandler(viewer) {
       infoPanel.classList.remove('hidden')
     }
   }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+}
+
+function setupHoverHandler(viewer) {
+  const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
+  handler.setInputAction((move) => {
+    const picked = viewer.scene.pick(move.endPosition)
+    if (hoveredEntity && hoveredEntity !== (picked?.id)) {
+      if (hoveredEntity.polygon?.outlineColor) {
+        hoveredEntity.polygon.outlineColor = Cesium.Color.fromBytes(255, 255, 255, 60)
+      }
+      hoveredEntity = null
+    }
+    if (Cesium.defined(picked) && picked.id && picked.id.polygon?.outlineColor) {
+      hoveredEntity = picked.id
+      hoveredEntity.polygon.outlineColor = Cesium.Color.fromBytes(0, 212, 170, 200)
+    }
+  }, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
 }
 
 function setupScreenshot(viewer) {

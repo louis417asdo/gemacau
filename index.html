@@ -47,11 +47,40 @@
       <div class="scenario-note">* 重建方案為模擬數據，非官方規劃</div>
     </div>
   </div>
+  <div id="simulator-panel" class="panel hidden">
+    <div class="panel-header">益隆重建模擬器</div>
+    <div class="panel-body">
+      <div class="sim-presets">
+        <button class="sim-preset active" data-floors="7">現狀 7層</button>
+        <button class="sim-preset" data-floors="15">方案A 15層</button>
+        <button class="sim-preset" data-floors="25">方案B 25層</button>
+      </div>
+      <div class="sim-slider-row">
+        <span class="sim-label">樓層</span>
+        <span class="sim-value" id="sim-floors">7 層</span>
+      </div>
+      <input type="range" id="sim-slider" class="sim-slider" min="3" max="40" step="1" value="7" />
+      <div class="sim-stats">
+        <div class="sim-stat"><span>容積率</span><span id="sim-far">—</span></div>
+        <div class="sim-stat"><span>人口</span><span id="sim-pop">—</span></div>
+      </div>
+      <div class="sim-delta" id="sim-delta"></div>
+      <div class="sim-note">* 益隆七棟模擬數據，非官方規劃</div>
+    </div>
+  </div>
   <div id="info-panel" class="panel hidden">
     <div class="panel-header">建築資訊</div>
     <div class="panel-body" id="info-content">點擊建築物查看詳情</div>
   </div>
   <button id="screenshot-btn">📷 截圖</button>
+  <div id="legend" class="hidden">
+    <div class="legend-header" id="legend-title">圖例</div>
+    <div class="legend-bar" id="legend-bar"></div>
+    <div class="legend-labels">
+      <span id="legend-min">低</span>
+      <span id="legend-max">高</span>
+    </div>
+  </div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
