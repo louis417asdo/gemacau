@@ -1,0 +1,55 @@
+{
+  "freguesias": [
+    {
+      "name": "花地瑪堂區",
+      "nameEn": "Nossa Senhora de Fátima",
+      "population": 256381,
+      "zones": ["青洲區", "台山區", "黑沙環及祐漢區", "黑沙環新填海區", "望廈及水塘區", "筷子基區"]
+    },
+    {
+      "name": "花王堂區",
+      "nameEn": "Santo António",
+      "population": 133920,
+      "zones": ["林茂塘區", "高士德及雅廉訪區", "新橋區", "沙梨頭及大三巴區"]
+    },
+    {
+      "name": "望德堂區",
+      "nameEn": "São Lázaro",
+      "population": 33442,
+      "zones": ["荷蘭園區", "東望洋區"]
+    },
+    {
+      "name": "大堂區",
+      "nameEn": "Sé",
+      "population": 55275,
+      "zones": ["新口岸區", "外港及南灣湖新填海區", "中區"]
+    },
+    {
+      "name": "風順堂區",
+      "nameEn": "São Lourenço",
+      "population": 53840,
+      "zones": ["下環區", "南西灣及主教山區"]
+    },
+    {
+      "name": "嘉模堂區",
+      "nameEn": "Nossa Senhora do Carmo",
+      "population": 112051,
+      "zones": ["海洋及小潭山區", "氹仔中心區", "大學及北安灣區", "北安及大潭山區", "氹仔舊城及馬場區"]
+    },
+    {
+      "name": "聖方濟各堂區",
+      "nameEn": "São Francisco Xavier",
+      "population": 36384,
+      "zones": ["路環區"]
+    },
+    {
+      "name": "路氹填海區",
+      "nameEn": "Zona do Aterro de Cotai",
+      "population": 0,
+      "zones": []
+    }
+  ],
+  "total_population": 681293,
+  "source": "DSEC 2021 Census (C_CEN_PUB_2021_Y_2.xls, Sheet 49)",
+  "note": "Population merged from 23 statistical zones into 8 freguesias. 路氹填海區 has no residential population."
+}

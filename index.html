@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemacau — 澳門數字孿生城市規劃系統</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇲🇴</text></svg>" />
+  <link rel="stylesheet" href="/src/styles/main.css" />
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <div id="toolbar">
+    <div id="toolbar-brand">Gemacau</div>
+    <button class="toolbar-btn active" data-panel="layers">圖層</button>
+    <button class="toolbar-btn" data-panel="analysis">分析</button>
+    <button class="toolbar-btn" data-panel="sunlight">日照</button>
+    <button class="toolbar-btn" data-panel="scenario">場景</button>
+    <div id="analysis-submenu" class="submenu hidden">
+      <button class="submenu-btn" data-analysis="density">建築密度</button>
+      <button class="submenu-btn" data-analysis="far">容積率</button>
+      <button class="submenu-btn" data-analysis="population">人口密度</button>
+    </div>
+  </div>
+  <div id="sunlight-panel" class="panel hidden">
+    <div class="panel-header">日照分析</div>
+    <div class="panel-body">
+      <button id="sunlight-toggle" class="sunlight-btn">陰影：關</button>
+      <div class="sunlight-presets">
+        <button class="sunlight-preset active" data-preset="summer">夏至</button>
+        <button class="sunlight-preset" data-preset="winter">冬至</button>
+        <button class="sunlight-preset" data-preset="equinox">春/秋分</button>
+      </div>
+      <div class="sunlight-info">
+        <span id="sunlight-date"></span>
+        <span id="sunlight-time"></span>
+      </div>
+      <input type="range" id="sunlight-timeline" class="sunlight-timeline" min="5" max="19" step="0.25" value="12" />
+      <div class="sunlight-note">* Cesium ShadowMap 即時陰影，非工程級日照時長分析</div>
+    </div>
+  </div>
+  <div id="scenario-panel" class="panel hidden">
+    <div class="panel-header">場景切換</div>
+    <div class="panel-body">
+      <button class="scenario-btn active" data-scenario="current">現狀</button>
+      <button class="scenario-btn" data-scenario="plan-a">重建方案 A</button>
+      <button class="scenario-btn" data-scenario="plan-b">重建方案 B</button>
+      <div class="scenario-note">* 重建方案為模擬數據，非官方規劃</div>
+    </div>
+  </div>
+  <div id="info-panel" class="panel hidden">
+    <div class="panel-header">建築資訊</div>
+    <div class="panel-body" id="info-content">點擊建築物查看詳情</div>
+  </div>
+  <button id="screenshot-btn">📷 截圖</button>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
