@@ -1,57 +1,37 @@
 import * as Cesium from 'cesium'
 
-const BUILDING_POSITIONS = [
-  [113.5498, 22.2092],
-  [113.5501, 22.2092],
-  [113.5504, 22.2092],
-  [113.5507, 22.2092],
-  [113.5499, 22.2087],
-  [113.5502, 22.2087],
-  [113.5505, 22.2087],
-]
-
 const BUILDING_SIZE_DEG = { lon: 0.0004, lat: 0.00036 }
 const BUILDING_AREA_M2 = 1600
 const PLOT_AREA_M2 = 30000
 const FLOOR_HEIGHT = 3
 const CURRENT_FLOORS = 7
-const PLAN_A_FLOORS = 15
-const PLAN_B_FLOORS = 25
 const UNIT_SIZE_M2 = 50
 const PERSONS_PER_UNIT = 3
 const RESIDENTIAL_RATIO = 0.6
 
+const DEFAULT_POSITIONS = [
+  [113.5498, 22.2092], [113.5501, 22.2092], [113.5504, 22.2092],
+  [113.5507, 22.2092], [113.5499, 22.2087], [113.5502, 22.2087],
+  [113.5505, 22.2087],
+]
+
 let buildingEntities = []
 let currentFloors = CURRENT_FLOORS
 let animFrameId = null
+let placementMode = false
+let placementHandler = null
+let onFloorsChange = null
 
 export function setupSimulator(viewer) {
-  buildingEntities = BUILDING_POSITIONS.map((pos, i) => {
-    const entity = viewer.entities.add({
-      name: `益隆 樓 ${i + 1}`,
-      rectangle: {
-        coordinates: Cesium.Rectangle.fromDegrees(
-          pos[0] - BUILDING_SIZE_DEG.lon / 2,
-          pos[1] - BUILDING_SIZE_DEG.lat / 2,
-          pos[0] + BUILDING_SIZE_DEG.lon / 2,
-          pos[1] + BUILDING_SIZE_DEG.lat / 2,
-        ),
-        material: Cesium.Color.fromCssColorString('#00d4aa').withAlpha(0.6),
-        outline: true,
-        outlineColor: Cesium.Color.WHITE.withAlpha(0.3),
-        height: 0,
-        extrudedHeight: CURRENT_FLOORS * FLOOR_HEIGHT,
-      },
-      description: `益隆新村 樓 ${i + 1}<br>現狀：${CURRENT_FLOORS} 層`,
-    })
-    return entity
-  })
+  DEFAULT_POSITIONS.forEach(pos => addBuildingEntity(viewer, pos))
 
   const slider = document.getElementById('sim-slider')
   const floorsEl = document.getElementById('sim-floors')
   const farEl = document.getElementById('sim-far')
   const popEl = document.getElementById('sim-pop')
   const deltaEl = document.getElementById('sim-delta')
+  const placeBtn = document.getElementById('sim-place-btn')
+  const clearBtn = document.getElementById('sim-clear-btn')
 
   function updateUI() {
     const stats = getStats(currentFloors)
@@ -64,6 +44,7 @@ export function setupSimulator(viewer) {
       const dPop = stats.population - base.population
       deltaEl.innerHTML = `Δ FAR: ${dFar >= 0 ? '+' : ''}${dFar.toFixed(1)}<br>Δ 人口: ${dPop >= 0 ? '+' : ''}${dPop.toLocaleString()}`
     }
+    if (onFloorsChange) onFloorsChange(currentFloors, getBuildingPositions())
   }
 
   if (slider) {
@@ -87,7 +68,62 @@ export function setupSimulator(viewer) {
     })
   })
 
+  if (placeBtn) {
+    placeBtn.addEventListener('click', () => {
+      placementMode = !placementMode
+      placeBtn.classList.toggle('active', placementMode)
+      placeBtn.textContent = placementMode ? '放置中...點擊地圖' : '放置建築'
+    })
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      buildingEntities.forEach(e => viewer.entities.remove(e))
+      buildingEntities = []
+      updateUI()
+    })
+  }
+
+  placementHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
+  placementHandler.setInputAction((click) => {
+    if (!placementMode) return
+    const cartesian = viewer.scene.pickPosition(click.position)
+    if (!Cesium.defined(cartesian)) return
+    const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+    const lon = Cesium.Math.toDegrees(cartographic.longitude)
+    const lat = Cesium.Math.toDegrees(cartographic.latitude)
+    addBuildingEntity(viewer, [lon, lat])
+    placementMode = false
+    if (placeBtn) {
+      placeBtn.classList.remove('active')
+      placeBtn.textContent = '放置建築'
+    }
+    updateUI()
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+
   updateUI()
+}
+
+function addBuildingEntity(viewer, pos) {
+  const entity = viewer.entities.add({
+    name: `模擬建築 ${buildingEntities.length + 1}`,
+    rectangle: {
+      coordinates: Cesium.Rectangle.fromDegrees(
+        pos[0] - BUILDING_SIZE_DEG.lon / 2,
+        pos[1] - BUILDING_SIZE_DEG.lat / 2,
+        pos[0] + BUILDING_SIZE_DEG.lon / 2,
+        pos[1] + BUILDING_SIZE_DEG.lat / 2,
+      ),
+      material: Cesium.Color.fromCssColorString('#00d4aa').withAlpha(0.6),
+      outline: true,
+      outlineColor: Cesium.Color.WHITE.withAlpha(0.3),
+      height: 0,
+      extrudedHeight: currentFloors * FLOOR_HEIGHT,
+    },
+    description: `模擬建築<br>${currentFloors} 層`,
+  })
+  buildingEntities.push(entity)
+  return entity
 }
 
 function setBuildingHeights(targetHeight, animate) {
@@ -120,13 +156,23 @@ function setBuildingHeights(targetHeight, animate) {
   animFrameId = requestAnimationFrame(step)
 }
 
+export function getBuildingPositions() {
+  return buildingEntities.map(e => {
+    const rect = e.rectangle.coordinates.getValue()
+    const lon = Cesium.Math.toDegrees((rect.west + rect.east) / 2)
+    const lat = Cesium.Math.toDegrees((rect.south + rect.north) / 2)
+    return [lon, lat]
+  })
+}
+
 export function getStats(floors) {
-  const totalFloorArea = BUILDING_AREA_M2 * floors * 7
+  const count = buildingEntities.length || 7
+  const totalFloorArea = BUILDING_AREA_M2 * floors * count
   const far = totalFloorArea / PLOT_AREA_M2
   const residentialArea = totalFloorArea * RESIDENTIAL_RATIO
   const units = Math.round(residentialArea / UNIT_SIZE_M2)
   const population = units * PERSONS_PER_UNIT
-  return { floors, far, population, units, totalFloorArea }
+  return { floors, far, population, units, totalFloorArea, buildingCount: count }
 }
 
 export function getCurrentStats() {
@@ -143,4 +189,8 @@ export function getComparisonReport() {
     deltaPop: proposed.population - current.population,
     deltaUnits: proposed.units - current.units,
   }
+}
+
+export function onFloorsChanged(callback) {
+  onFloorsChange = callback
 }

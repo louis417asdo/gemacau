@@ -4,9 +4,10 @@ import { MACAU_CENTER, INITIAL_ALTITUDE, INITIAL_PITCH } from './config/macau-re
 import { loadBuildingDensity, showBuildingDensity } from './analysis/building-density.js'
 import { loadFARGrid, showFARGrid } from './analysis/far-grid.js'
 import { loadPopulationDensity, showPopulationDensity } from './analysis/population-density.js'
-import { setupSunlight } from './analysis/sunlight.js'
+import { setupSunlight, refreshSunlight } from './analysis/sunlight.js'
 import { setupScenario } from './analysis/scenario.js'
-import { setupSimulator, getComparisonReport } from './analysis/simulator.js'
+import { setupSimulator, onFloorsChanged, getBuildingPositions } from './analysis/simulator.js'
+import { recalculateFAR, resetFARGrid } from './analysis/far-grid.js'
 import { getLegendColors } from './analysis/color-scale.js'
 
 const token = import.meta.env.VITE_CESIUM_ION_TOKEN
@@ -85,6 +86,15 @@ async function initViewer() {
   setupScenario(viewer)
   setupSimulator(viewer)
   setupScreenshot(viewer)
+
+  onFloorsChanged((floors, positions) => {
+    if (floors === 7) {
+      resetFARGrid()
+    } else {
+      recalculateFAR(positions, floors)
+    }
+    refreshSunlight(viewer)
+  })
 }
 
 function setAnalysis(viewer, mode) {

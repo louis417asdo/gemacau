@@ -1,17 +1,16 @@
 import * as Cesium from 'cesium'
 
 let shadowEnabled = false
-let animationId = null
+let currentDate = new Date()
 
 export function setupSunlight(viewer) {
+  currentDate.setHours(12, 0, 0, 0)
+
   const timeline = document.getElementById('sunlight-timeline')
   const dateLabel = document.getElementById('sunlight-date')
   const timeLabel = document.getElementById('sunlight-time')
   const toggleBtn = document.getElementById('sunlight-toggle')
   const presetBtns = document.querySelectorAll('.sunlight-preset')
-
-  let currentDate = new Date()
-  currentDate.setHours(12, 0, 0, 0)
 
   function updateSun(date) {
     viewer.scene.globe.enableLighting = true
@@ -27,8 +26,8 @@ export function setupSunlight(viewer) {
     const timeStr = date.toLocaleTimeString('zh-Hant', {
       hour: '2-digit', minute: '2-digit'
     })
-    dateLabel.textContent = dateStr
-    timeLabel.textContent = timeStr
+    if (dateLabel) dateLabel.textContent = dateStr
+    if (timeLabel) timeLabel.textContent = timeStr
 
     const sim = viewer.clock
     sim.currentTime = julianDate
@@ -80,4 +79,16 @@ export function setupSunlight(viewer) {
     currentDate.setHours(hours, minutes, 0, 0)
     updateSun(currentDate)
   })
+}
+
+export function refreshSunlight(viewer) {
+  if (!shadowEnabled) return
+  viewer.scene.globe.enableLighting = true
+  const julianDate = Cesium.JulianDate.fromDate(currentDate)
+  viewer.clock.currentTime = julianDate
+  viewer.clock.shouldAnimate = false
+}
+
+export function isShadowEnabled() {
+  return shadowEnabled
 }

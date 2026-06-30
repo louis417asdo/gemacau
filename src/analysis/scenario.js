@@ -1,5 +1,7 @@
 import * as Cesium from 'cesium'
-import { getComparisonReport } from './simulator.js'
+import { getComparisonReport, getBuildingPositions } from './simulator.js'
+import { refreshSunlight } from './sunlight.js'
+import { recalculateFAR, resetFARGrid } from './far-grid.js'
 
 let currentScenario = 'current'
 
@@ -29,6 +31,7 @@ function switchScenario(viewer, scenario) {
     const currentBtn = document.querySelector('.sim-preset[data-floors="7"]')
     if (currentBtn) currentBtn.classList.add('active')
     slider?.dispatchEvent(new Event('input'))
+    resetFARGrid()
     if (infoPanel) infoPanel.classList.add('hidden')
   } else if (scenario === 'plan-a') {
     if (slider) slider.value = 15
@@ -36,6 +39,7 @@ function switchScenario(viewer, scenario) {
     const planABtn = document.querySelector('.sim-preset[data-floors="15"]')
     if (planABtn) planABtn.classList.add('active')
     slider?.dispatchEvent(new Event('input'))
+    recalculateFAR(getBuildingPositions(), 15)
     showComparisonReport(infoContent, infoPanel)
   } else if (scenario === 'plan-b') {
     if (slider) slider.value = 25
@@ -43,8 +47,11 @@ function switchScenario(viewer, scenario) {
     const planBBtn = document.querySelector('.sim-preset[data-floors="25"]')
     if (planBBtn) planBBtn.classList.add('active')
     slider?.dispatchEvent(new Event('input'))
+    recalculateFAR(getBuildingPositions(), 25)
     showComparisonReport(infoContent, infoPanel)
   }
+
+  refreshSunlight(viewer)
 }
 
 function showComparisonReport(infoContent, infoPanel) {
